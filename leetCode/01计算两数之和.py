@@ -1,14 +1,46 @@
-"""
-@Author  : liuyang
-@Time    : 2025/2/11 13:30
-@Content : 
-"""
-nums = ["a","b","c","d"]
-for index,value in enumerate(nums):
-    print(index,value)
-# 0 a
-# 1 b
-# 2 c
-# 3 d
+"""给定一个整数数组 nums 和一个整数目标值 target，请你在该数组中找出 和为目标值 target  的那 两个 整数，并返回它们的数组下标。
+你可以假设每种输入只会对应一个答案，并且你不能使用两次相同的元素。你可以按任意顺序返回答案。
+示例 1：
+输入：nums = [2,7,11,15], target = 9
+输出：[0,1]
+解释：因为 nums[0] + nums[1] == 9 ，返回 [0, 1]
 
-# 给定一个整数数组 nums 和一个整数目标值 target，请你在该数组中找出 和为目标值 target  的那两个整数，并返回它们的数组下标。
+示例 2：
+输入：nums = [3,2,4], target = 6
+输出：[1,2]
+
+示例 3：
+输入：nums = [3,3], target = 6
+输出：[0,1]"""
+
+class Solution(object):
+    def twoSum(self, nums, target):
+        """
+        :type nums: List[int]
+        :type target: int
+        :rtype: List[int]
+        """
+        num_dict = {}
+        for index,num in enumerate(nums):
+            compare_num = target - num
+            print("坐减法时当前中间数为：",compare_num)
+            if compare_num in num_dict:
+                print(f"命中if，返回index为{index}，返回为{num_dict[compare_num]}")
+                return num_dict[compare_num],index
+            num_dict[num] = index
+            print("存入字典后的数据为：",num_dict)
+
+s1 = Solution()
+s1.twoSum([2,3,4,5,6],9)
+
+"""
+坐减法时当前中间数为： 7
+存入字典后的数据为： {2: 0}
+坐减法时当前中间数为： 6
+存入字典后的数据为： {2: 0, 3: 1}
+坐减法时当前中间数为： 5
+存入字典后的数据为： {2: 0, 3: 1, 4: 2}
+坐减法时当前中间数为： 4
+命中if，返回index为3，返回为2
+Process finished with exit code 0
+"""
