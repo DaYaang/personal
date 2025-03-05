@@ -1,0 +1,677 @@
+spring:
+  codec:
+    max-in-memory-size: 4MB
+  cloud:
+    gateway:
+      httpclient:
+        compression: true
+        pool:
+          max-idle-time: 10000
+          metrics: true
+        enabled: true
+      metrics:
+        enabled: true
+        tags.path.enabled: true
+      routes:
+        - id: youpin-bff-public-security
+          uri: lb://youpin-bff
+          predicates:
+            - Path=/api/youpin/bff/order/record/send-list
+          filters:
+            - StripPrefix=3
+            - name: ModifyRequestBody
+              args:
+                inClass: java.lang.String
+                outClass: java.lang.String
+                rewriteFunction: '#{@decryptRequestBodyFunction}'
+            - name: ModifyResponseBody
+              args:
+                inClass: java.lang.String
+                outClass: java.lang.String
+                rewriteFunction: '#{@encryptResponseBodyFunction}'
+        - id: youpin-bff-api-security
+          uri: lb://youpin-bff
+          predicates:
+            - Path=/api/youpin/bff/risk/control/appeal/send-addRisk,/api/youpin/bff/risk/control/appeal/send-check,/api/youpin/bff/risk/control/appeal/send-checkCard,/api/youpin/bff/risk/control/appeal/send-listRisk,/api/youpin/bff/order/create,/api/youpin/bff/order/free/play/early-back,/api/youpin/bff/order/early-back,/api/youpin/bff/order/api-key/refresh-success,/api/youpin/bff/order/create-order-pay,/api/youpin/bff/order/ownerCancelTransfer,/api/youpin/bff/order/buyer/promise/check-promise-payment,/api/youpin/bff/order/paying/query/status,/api/youpin/bff/order/trace,/api/youpin/bff/order/buyout/amount,/api/youpin/bff/order/buyout/query/status,/api/youpin/bff/order/buyout/submit,/api/youpin/bff/order/lease-record-list,/api/youpin/bff/order/rent-out-record-list,/api/youpin/bff/order/detail,/api/youpin/bff/order/freeplay/cancel/sublease,/api/youpin/bff/order/cancel,/api/youpin/bff/order/remind-delivery,/api/youpin/bff/order/give-back,/api/youpin/bff/order/back/send-offer,/api/youpin/bff/order/back/query-offer-status,/api/youpin/bff/order/buyer/keep/promise,/api/youpin/bff/order/lessee/send-offer,/api/youpin/bff/order/lessee/query/offer-state,/api/youpin/bff/commodity/leased-count,/api/youpin/bff/commodity/ownerCancelTransfer,/api/youpin/bff/commodity/in-rent-list,/api/youpin/bff/commodity/ownerCancelTransferBatch,/api/youpin/bff/cashier/lease,/api/youpin/bff/cashier/lease/count/price,/api/youpin/bff/cashier/renewal,/api/youpin/bff/cashier/buyout,/api/youpin/bff/cashier/keep-promises,/api/youpin/bff/order/rerent/get-rerent-price,/api/youpin/bff/order/rerent/compute-pay-price,/api/youpin/bff/order/rerent/check-status,/api/youpin/bff/order/rerent/confirm-payment,/api/youpin/bff/trade/offer/send-state-fast,/api/youpin/bff/cashier/lease/v2
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+            - name: ModifyRequestBody
+              args:
+                inClass: java.lang.String
+                outClass: java.lang.String
+                rewriteFunction: '#{@decryptRequestBodyFunction}'
+            - name: ModifyResponseBody
+              args:
+                inClass: java.lang.String
+                outClass: java.lang.String
+                rewriteFunction: '#{@encryptResponseBodyFunction}'
+        - id: youpin-base-bff-app-service-api-security
+          uri: lb://youpin-base-bff-app-service
+          predicates:
+            - Path=/api/youpin/bff/trade/v1/order/sell/create,/api/youpin/bff/trade/v1/order/pay/createPayOrder
+          filters:
+            - StripPrefix=4
+            - UserLoginAuthFilter
+            - name: ModifyRequestBody
+              args:
+                inClass: java.lang.String
+                outClass: java.lang.String
+                rewriteFunction: '#{@decryptRequestBodyFunction}'
+            - name: ModifyResponseBody
+              args:
+                inClass: java.lang.String
+                outClass: java.lang.String
+                rewriteFunction: '#{@encryptResponseBodyFunction}'
+        - id: youpin-base-message-notification-service
+          uri: lb://youpin-base-message-notification-service
+          predicates:
+            - Path=/api/youpin/base-message/v1/base/messageNotification/sms/report
+          filters:
+            - StripPrefix=3
+        - id: youpin-merchandise-aggregation-core-service-noAuth
+          uri: lb://youpin-merchandise-aggregation-core-service
+          predicates:
+            - Path=/api/youpin/commodityAgg/redLockWorryFree/v2/commodity/list,/api/youpin/commodityAgg/redLockWorryFree/config/commodity/list
+          filters:
+            - StripPrefix=3
+            - ResolveUserIdFilter
+        - id: youpin-merchandise-aggregation-core-service
+          uri: lb://youpin-merchandise-aggregation-core-service
+          predicates:
+            - Path=/api/youpin/commodity/product/price/v1/inventory/buyPrice/fill,/api/youpin/commodity/product/price/v1/inventory/buyPrice/fillNoAbradeProductBuyPrice,/api/youpin/commodity/inventory/v1/upload/init,/api/youpin/commodity/inventory/v1/product/listUserProductPrivilege/config,/api/youpin/commodity/inventory/v1/product/markerUserProductBuyYoupinFlag,/api/youpin/commodity/product/price/v1/inventory/buyPrice/getUserNoAbradeBuyPriceList,/api/youpin/commodity/inventory/v1/product/listUserProductPrivilege/config/all,/api/youpin/commodityAgg/redLockWorryFree/commodity/list
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        - id: youpin-social-comment-core-service
+          uri: lb://youpin-social-comment-core-service
+          predicates:
+            - Path=/api/youpin/social/v1/api/social/remark/operateOrnamentRemark,/api/youpin/social/v1/api/social/remark/batchQueryOrnamentRemark,api/youpin/social/v1/api/social/remark/batchDeleteOrnamentRemark
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        - id: youpin-commodity-private
+          uri: lb://youpin-commodity
+          predicates:
+            - Path=/api/youpin/commodity/auto/supplement/template,/api/youpin/commodity/job/**,/api/youpin/commodity/check/tradeurl,/api/youpin/commodity/test/mq/send,/api/youpin/commodity/soldOut/comm,/api/youpin/commodity/service/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-user-info-core-service-nologin
+          uri: lb://youpin-user-info-core-service
+          predicates:
+            - Path=/api/youpin/userInfo/v1/userConfig/queryTransactionModeOptions
+          filters:
+            - StripPrefix=3
+        - id: youpin-user-info-core-service
+          uri: lb://youpin-user-info-core-service
+          predicates:
+            - Path=/api/youpin/userInfo/v1/userConfig/setUserCustomConfig,/api/youpin/userInfo/v1/userConfig/queryUserCustomConfig
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        - id: youpin-commodity-public
+          uri: lb://youpin-commodity
+          predicates:
+            - Path=/api/youpin/commodity/list/**,/api/youpin/commodity/inventory/**,/api/youpin/commodity/purchase/find,/api/youpin/commodity/purchase/advertising,/api/youpin/commodity/steam/**,/api/youpin/commodity/v2/purchase/find,/api/youpin/commodity/v2/purchase/special,/api/youpin/commodity/v2/purchase/subsidyConfig,/api/youpin/commodity/purchase/official/list/commodityPurchase,/api/youpin/commodity/commodity/inspect/callback/cs2/result,/api/youpin/commodity/collection/list,/api/youpin/commodity/collection/box/template/group/list,/api/youpin/commodity/collection/template/boxList,/api/youpin/commodity/collection/box/info
+          filters:
+            - StripPrefix=3
+        - id: youpin-commodity-api
+          uri: lb://youpin-commodity
+          predicates:
+            - Path=/api/youpin/commodity/purchase/**,/api/youpin/commodity/v2/**,/api/youpin/commodity/leaseOrder/**,/api/youpin/commodity/batchBuy/**,/api/youpin/commodity/batchSupply/**,/api/youpin/commodity/v3/**,/api/youpin/commodity/commodity/search/like/commodityName,/api/youpin/commodity/commodity/template/reference/info
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        - id: youpin-commodity-manage
+          uri: lb://youpin-commodity
+          predicates:
+            - Path=/api/youpin/commodity/manage/**
+          filters:
+            - StripPrefix=3
+            - AdminLoginAuthFilter
+        - id: youpin-detect
+          uri: lb://youpin-detect
+          predicates:
+            - Path=/api/youpin/detect/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-sysconfig-public
+          uri: lb://youpin-sysconfig
+          predicates:
+            - Path=/api/youpin/sysconfig/agreement/*/*/app,/api/youpin/sysconfig/common/info,/api/youpin/sysconfig/service/private/trade/downloadLink/config,/api/youpin/sysconfig/cdn/baseConfig,/api/youpin/sysconfig/cdn/loseResult,/service/sell/OrderStatusDesc
+          filters:
+            - StripPrefix=3
+        - id: youpin-sysconfig-manage
+          uri: lb://youpin-sysconfig
+          predicates:
+            - Path=/api/youpin/sysconfig/agreement/config/**,/api/youpin/sysconfig/agreement/content/**,/api/youpin/sysconfig/sysConfig/**,/api/youpin/sysconfig/appVersionUpConfig/**,/api/youpin/sysconfig/serviceFeeConfig/**,/api/youpin/sysconfig/manage/**,/api/youpin/sysconfig/service/**
+          filters:
+            - StripPrefix=3
+            - AdminLoginAuthFilter
+        - id: youpin-other
+          uri: lb://youpin-other
+          predicates:
+            - Path=/api/youpin/other/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-vip-all-v2
+          uri: lb://youpin-vip-all
+          predicates:
+            - Path=/api/youpin/vip/**
+            # - RemoteAddr=192.168.1.1/16,10.1.1.1/8,171.8.225.205,120.24.228.2
+            - Header=x-api-version,v2
+          filters:
+            - VipAuthFilter
+            #- RsaRequestFilter
+            - StripPrefix=3
+            - PrefixPath=/v2
+        - id: youpin-vip-all
+          uri: lb://youpin-vip-all
+          predicates:
+            - Path=/api/youpin/vip/**
+            # - RemoteAddr=192.168.1.1/16,10.1.1.1/8,171.8.225.205,120.24.228.2
+          filters:
+            - VipAuthFilter
+            #- RsaRequestFilter
+            - StripPrefix=3
+        - id: youpin-vip-credit
+          uri: lb://youpin-vip-credit
+          predicates:
+            - Path=/service/vip/credit/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-vip-orderpay
+          uri: lb://youpin-vip-orderpay
+          predicates:
+            - Path=/service/vip/orderpay/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-vip-svc
+          uri: lb://youpin-vip-svc
+          predicates:
+            - Path=/service/vip/svc/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-activity-service
+          uri: lb://youpin-activity
+          predicates:
+            - Path=/api/youpin/activity/service/**,/api/youpin/activity/job/**,/api/youpin/activity/deposit/card/create,/api/youpin/activity/deposit/card/withdraw,/api/youpin/activity/fixedCard/notify
+            #- RemoteAddr=192.168.1.1/16,10.1.1.1/8,171.8.225.205,120.24.228.2
+          filters:
+            - StripPrefix=3
+        - id: youpin-activity-manage
+          uri: lb://youpin-activity
+          predicates:
+            - Path=/api/youpin/activity/manage/**,/api/youpin/activity/deposit/card/record,/api/youpin/activity/deposit/card/useorder,/api/youpin/activity/deposit/card/useorderlist,/api/youpin/activity/deposit/card/userCount,/api/youpin/activity/deposit/card/count,/api/youpin/activity/deposit/risk/create,/api/youpin/activity/deposit/risk/update,/api/youpin/activity/deposit/risk/switch,/api/youpin/activity/deposit/templates/list,/api/youpin/activity/deposit/cardConfig/list,/api/youpin/activity/deposit/risk/list,/api/youpin/activity/deposit/cardConfig/create,/api/youpin/activity/deposit/cardConfig/update,/api/youpin/activity/deposit/cardConfig/switch
+            # - RemoteAddr=192.168.1.1/16,10.1.1.1/8,171.8.225.205,120.24.228.2
+          filters:
+            - StripPrefix=3
+            - AdminLoginAuthFilter
+        - id: youpin-activity-api
+          uri: lb://youpin-activity
+          predicates:
+            - Path=/api/youpin/activity/**
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        - id: youpin-secret
+          uri: lb://youpin-secret
+          predicates:
+            - Path=/service/youpin/secret/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-message
+          uri: lb://youpin-message
+          predicates:
+            - Path=/service/youpin/message/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-bff-public
+          uri: lb://youpin-bff
+          predicates:
+            - Path=/api/youpin/bff/appUpConfig,/api/youpin/bff/iosAppUpConfig,/api/youpin/bff/common/query/globalConfig,/api/youpin/bff/androidAppUpConfig,/api/youpin/bff/order/record/send-list,/api/youpin/bff/risk/control/appeal/send-policySTS,/api/youpin/bff/activity/share/commodity-list,/api/youpin/bff/activity/repurchase/advertisement,/api/youpin/bff/activity/index/floating-windows,/api/youpin/bff/activity/share/activity-open,/api/youpin/bff/order/record/pc/send-list,/api/youpin/bff/common/hotFix,/api/youpin/bff/v1/appUpConfig
+          filters:
+            - StripPrefix=3
+        # 这里需要slb拦
+        - id: youpin-bff-service
+          uri: lb://youpin-bff
+          predicates:
+            - Path=/api/youpin/bff/order/callback/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-bff-api2
+          uri: lb://youpin-bff
+          predicates:
+            - Path=/api/user/**,/api/youpin/redbag/**,/api/youpin/assets/**
+          filters:
+            - StripPrefix=2
+            - UserLoginAuthFilter
+        - id: youpin-bff-api
+          uri: lb://youpin-bff
+          predicates:
+            - Path=/api/youpin/bff/cashier/**,/api/youpin/bff/order/**,/api/youpin/bff/addAppUpCount,/api/youpin/bff/commodity/**,/api/youpin/bff/order/lessee/**,/api/youpin/bff/trade/offer/send-state-fast,/api/youpin/bff/risk/control/appeal/**,/api/youpin/bff/customer/lease/bill/**,/api/youpin/bff/agency/steam/**,/api/youpin/bff/order/lease/user/**,/api/youpin/bff/activity/new-user-bag/query,/api/youpin/bff/activity/new-user-bag/notice,/api/youpin/bff/activity/new-user-bag/notice/update,/api/youpin/bff/activity/repurchase/*,/api/youpin/bff/activity/new-user-bag/query,/api/youpin/bff/activity/new-user-bag/notice,/api/youpin/bff/activity/index/login/floating-windows/**,/api/youpin/bff/sysConfig/**,/api/youpin/bff/steam/**,/api/youpin/bff/common/**
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        # 这里需要slb拦
+        - id: youpin-rules-service
+          uri: lb://youpin-rules
+          predicates:
+            - Path=/api/youpin/rules/service/activity/leaseGive/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-rules-manage
+          uri: lb://youpin-rules
+          predicates:
+            - Path=/api/youpin/rules/manage/activity/leaseGive/**
+          filters:
+            - StripPrefix=3
+            - AdminLoginAuthFilter
+        - id: youpin-rules-api
+          uri: lb://youpin-rules
+          predicates:
+            - Path=/api/youpin/rules/index/**
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        # 这里有安全漏洞,影响范围未知, 需要slb把这个路径直接屏蔽
+        - id: youpin-admin-service
+          uri: lb://youpin-admin
+          predicates:
+            - Path=/api/youpin/service/**
+          filters:
+            - StripPrefix=2
+        - id: youpin-admin-manage-noAuth
+          uri: lb://youpin-admin
+          predicates:
+            - Path=/api/youpin/admin/appUpConfig/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-admin-manage
+          uri: lb://youpin-admin
+          predicates:
+            - Path=/api/youpin/admin/repurchase/lottery/createVoucher,/api/youpin/admin/serviceFee/**,/api/youpin/admin/sysConfig/**,/api/youpin/admin/order/**,/api/youpin/admin/work-order/**,/api/youpin/admin/risk/control/appeal/**,/api/youpin/admin/agency/steam/**,/api/youpin/admin/activity/**,/api/youpin/admin/repurchase/**,/api/youpin/admin/templateAlias/**,/api/youpin/admin/search/data/**,/api/youpin/admin/excel/**,/api/youpin/admin/common/**,/api/youpin/admin/lease-deposit-limit/**,/api/youpin/admin/legal/manage/arrears/data,/api/youpin/admin/legal/manage/arrears/data/list,/api/youpin/admin/purchase/**,/api/youpin/admin/common/**,/api/youpin/admin/lease-deposit-limit/**,/api/youpin/admin/risk/**,/api/youpin/admin/assure/**,/api/youpin/admin/private/**,/api/youpin/admin/cashbook/query/accountList,/api/youpin/admin/cashbook/query/accountBalance,/api/youpin/admin/cashbook/query/allocateDetailList,/api/youpin/admin/cashbook/deposit/confirmPay,/api/youpin/admin/cashbook/allocate/confirmPay,/api/youpin/admin/apikey/web/findAPIKeyGuardByPage,/api/youpin/admin/apikey/web/relieveGuardByCustom,/api/youpin/admin/message/board/add,/api/youpin/admin/message/board/delete,/api/youpin/admin/message/board/query,/api/youpin/admin/limit/**,/api/youpin/admin/voice/**,/api/youpin/admin/sensitive/user/prohibit/change,/api/youpin/admin/sensitive/user/prohibit,/api/youpin/admin/sensitive/user/prohibit/change,/api/youpin/admin/sensitive/user/prohibit,/api/youpin/admin/voice/**,/api/youpin/admin/commodityTags/**,/api/youpin/admin/cms/**,/api/youpin/admin/upload/**, /api/youpin/admin/onShelfCoefficient/**,/api/youpin/admin/appeal/**,/api/youpin/admin/inspectionType/template/query/commonInspectionType,/api/youpin/admin/inspectionType/template/update/commonInspectionType,/api/youpin/admin/payment-charge/strategy/add,/api/youpin/admin/payment-charge/strategy/edit,/api/youpin/admin/payment-charge/strategy-detail/add-batch,/api/youpin/admin/payment-charge/strategy-detail/edit,/api/youpin/admin/payment-charge/strategy-detail/edit-batch,/api/youpin/admin/payment-charge/strategy-detail/deleteByIds,/api/youpin/admin/payment-query/strategy/pageQuery,/api/youpin/admin/payment-query/strategy/queryById,/api/youpin/admin/payment-query/strategy-detail/pageQuery,/api/youpin/admin/payment-query/strategy-detail/queryById,/api/youpin/admin/payment-query/pcsBlock/v1/queryBlockListPage,/api/youpin/admin/payment-charge/pcsBlock/v1/batchAddBlock,/api/youpin/admin/payment-charge/pcsBlock/v1/batchDeleteBlock,/api/youpin/admin/payment/whiteList/batchAddUserWhiteList,/api/youpin/admin/payment/whiteList/batchDeleteUserWhiteList,/api/youpin/admin/payment/whiteList/query/depositWhiteList,/api/youpin/admin/store/ban/switch/query,/api/youpin/admin/store/ban/switch/update,/api/youpin/admin/inspectionType/template/query/inspectionTypeList,/api/youpin/admin/inspectionType/template/create/InspectionType,/api/youpin/admin/inspectionType/template//update/InspectionType,/api/youpin/admin/inspectionType/template/query/inspectionTypeList,/api/youpin/admin/inspectionType/template/create/InspectionType,/api/youpin/admin/inspectionType/template/update/InspectionType,/api/youpin/admin/activity-config/query,/api/youpin/admin/activity-config/update,/api/youpin/admin/activity/special/user/list,/api/youpin/admin/activity/special/user/batchAdd,/api/youpin/admin/activity/special/user/delete,/api/youpin/admin/rent-free/order/flow,/api/youpin/admin/rent-free/summary/detail,/api/youpin/admin/rent-free/subsidy/flow,/api/youpin/admin/rent-free/query/gray/center/config,/api/youpin/admin/rent-free/participate/condition,/api/youpin/admin/rent-free/gray/rate,/api/youpin/admin/rent-free/activity/gary/start,/api/youpin/admin/app/up/config/query/list,/api/youpin/admin/app/up/config/add,/api/youpin/admin/app/up/config/modify,/api/youpin/admin/app/up/config/del,/api/youpin/admin/specify/version/config/query/list,/api/youpin/admin/specify/version/config/add,/api/youpin/admin/specify/version/config/modify,/api/youpin/admin/specify/version/config/del,/api/youpin/admin/zeroRent/**,/api/youpin/admin/activity/certification/queryByPage,/api/youpin/admin/activity/certification/add,/api/youpin/admin/activity/certification/edit,/api/youpin/admin/activity/certification/revokeCertificationImport,/api/youpin/admin/secure/rise/standard/add,/api/youpin/admin/secure/rise/standard/update,/api/youpin/admin/secure/rise/standard/del,/api/youpin/admin/secure/rise/standard/query,/api/youpin/admin/secure/rise/premium/add,/api/youpin/admin/secure/rise/premium/update,/api/youpin/admin/secure/rise/premium/del,/api/youpin/admin/secure/rise/premium/query,/api/youpin/admin/secure/rise/copywriting/query,/api/youpin/admin/secure/rise/copywriting/update,/api/youpin/admin/secure/rise/common/config,/api/youpin/admin/secure/rise/common/config/update/service,/api/youpin/admin/secure/rise/common/config/update/service/prices,/api/youpin/admin/order/increment/query,/api/youpin/admin/lease/super/long/common/config/query,/api/youpin/admin/lease/super/long/common/config/update,/api/youpin/admin/lease/super/long/commodity/template/list/query,/api/youpin/admin/lease/super/long/commodity/template/batch/add,/api/youpin/admin/lease/super/long/commodity/template/batch/update,/api/youpin/admin/lease/super/long/commodity/template/del,/api/youpin/admin/editUserWhiteList,/api/youpin/admin/redLockWorryFree/workOrder/list,/api/youpin/admin/redLockWorryFree/workOrder/detail,/api/youpin/admin/redLockWorryFree/workOrder/save,/api/youpin/admin/redLockWorryFree/workOrder/confirm,/api/youpin/admin/query/RedLockWorryFreeOrder/list,/api/youpin/admin/redLockWorryFree/query/recvAccount,/api/youpin/admin/redLockWorryFree/modify/auditing,/api/youpin/admin/gray/plan/query,/api/youpin/admin/gray/plan/add,/api/youpin/admin/gray/plan/update,/api/youpin/admin/gray/plan/del,/api/youpin/admin/gray/plan/common/config/query,/api/youpin/admin/gray/plan/common/config/update,/api/youpin/admin/redLockWorryFree/service/queryDetail,/api/youpin/admin/redLockWorryFree/users/list,/api/youpin/admin/editUserWhiteList,/api/youpin/admin/redLockWorryFree/workOrder/fromInitToWaitAudit,/api/youpin/admin/redLockWorryFree/workOrder/fromAuditPassToWaitApprove,/api/youpin/admin/redLockWorryFree/workOrder/reparationApprove,/api/youpin/admin/redLockWorryFree/service/insertBlackList,/api/youpin/admin/redLockWorryFree/service/dropBlackList,/api/youpin/admin/redLockWorryFree/service/refund,/api/youpin/admin/redLockWorryFree/discount/list,/api/youpin/admin/redLockWorryFree/discount/add,/api/youpin/admin/redLockWorryFree/discount/edit,/api/youpin/admin/redLockWorryFree/queryIncrementOrder/list,/api/youpin/admin/operation/log/list,/api/youpin/admin/userInfo/redLockWorryFree/userRedLockEquityCheck,/api/youpin/admin/redLockWorryFree/valueAdded/caculateRestValue,/api/youpin/admin/face/verification/record/page,/api/youpin/admin/face/verification/record/order/update,/api/youpin/admin/cs2Inspection/config,/api/youpin/admin/cs2Inspection/config/update,/api/youpin/admin/cs2Inspection/config/template/create,/api/youpin/admin/cs2Inspection/config/template/delete,/api/youpin/admin/cs2Inspection/config/template/update,/api/youpin/admin/cs2Inspection/config/template/list,/api/youpin/admin/commodity/management/spu/search,/api/youpin/admin/commodity/management/spu/addSpuByServiceType,/api/youpin/admin/commodity/management/spu/editSpuByServiceType,/api/youpin/admin/commodity/management/spu/setSpuVisible,/api/youpin/admin/commodity/management/spuProduct/search,/api/youpin/admin/commodity/management/spuProduct/addProduct,/api/youpin/admin/commodity/management/spuProduct/editProduct,/api/youpin/admin/commodity/management/spuProduct/statusSwitch,/api/youpin/admin/redLockWorryFree/increment/service/createIncrementService,/api/youpin/admin/redLockWorryFree/increment/service/updateIncrementService,/api/youpin/admin/redLockWorryFree/increment/service/queryIncrementService,/api/youpin/admin/redLockWorryFree/increment/service/spuId/spuName,/api/youpin/admin/merchant-indirect/pageQuery,/api/youpin/admin/merchant-indirect/v1/reissue-notice,/api/youpin/admin/service/payWayRoute/save,/api/youpin/admin/service/payWayRoute/query,/api/youpin/admin/royalty-relation/save,/api/youpin/admin/royalty-relation/unBind,/api/youpin/admin/royalty-relation/query,/api/youpin/admin/royalty-relation/charge/save,/api/youpin/admin/royalty-relation/charge/query,/api/youpin/admin/royalty-relation/charge/update,/api/youpin/admin/user/getUserSigningRecordList/page,/api/youpin/admin/royalty-relation/pageQuery,/api/youpin/admin/user/getUserSigningRecordList/page,/api/youpin/admin/query/bindAccountGuideInfo,/api/youpin/admin/update/bindAccountGuide,/api/youpin/admin/redLockWorryFree/increment/service/queryIncrementService/spuId/spuName,/api/youpin/admin/serviceCharge/limit/query,/api/youpin/admin/serviceCharge/limit/update,/api/youpin/admin/serviceCharge/switch/update,/api/youpin/admin/serviceCharge/ruleScale/add,/api/youpin/admin/serviceCharge/ruleScale/query,/api/youpin/admin/serviceCharge/order/list,/api/youpin/admin/read/number/del,/api/youpin/admin/buy/number/limit/query,/api/youpin/admin/buy/number/limit/update,/api/youpin/admin/assure/lease/query/purchase/serviceTypeSpu,/api/youpin/admin/assure/lease/query/purchase/getNewSwitch,/api/youpin/admin/assure/lease/save/purchase/newSwitch,/api/youpin/admin/assure/lease/query/gray/commodityList,/api/youpin/admin/assure/lease/save/purchase/commodityTemplate,/api/youpin/admin/assure/lease/delete/purchase/commodityTemplate,/api/youpin/admin/assure/lease/save/purchase/serviceTypeConfig,/api/youpin/admin/price/trend/riseAndFall/common/config/query,/api/youpin/admin/price/trend/riseAndFall/common/config/update,/api/youpin/admin/price/trend/riseAndFall/commodity/template/batch/add,/api/youpin/admin/price/trend/riseAndFall/commodity/template/list,/api/youpin/admin/price/trend/riseAndFall/commodity/template/del,/api/youpin/admin/price/trend/riseAndFall/commodity/template/batch/update,/api/youpin/admin/price/trend/valueFactor/common/config/query,/api/youpin/admin/price/trend/valueFactor/common/config/update,/api/youpin/admin/price/trend/valueFactor/commodity/template/batch/add,/api/youpin/admin/price/trend/valueFactor/commodity/template/list,/api/youpin/admin/price/trend/valueFactor/commodity/template/del,/api/youpin/admin/price/trend/valueFactor/commodity/template/batch/update,/api/youpin/admin//order/price/trend/queryPrice,/api/youpin/admin/order/price/trend/updatePrice,/api/youpin/admin/marketPrice/specialAbbr/config/record/update,/api/youpin/admin/marketPrice/specialAbbr/config/record/create,/api/youpin/admin/marketPrice/specialAbbr/config/record/list,/api/youpin/admin/marketPrice/specialAbbr/config/record/delete,/api/youpin/admin/marketPrice/specialAbbr/config/createType,/api/youpin/admin/marketPrice/specialAbbr/config/type/list,/api/youpin/admin/marketPrice/specialAbbr/config/type/delete,/api/youpin/admin/marketPrice/specialAbbr/config/type/update,/api/youpin/admin/marketPrice/abrade/config/dropdown/list,/api/youpin/admin/marketPrice/abrade/config/template/create,/api/youpin/admin/marketPrice/abrade/config/commonConfig,/api/youpin/admin/marketPrice/abrade/config/template/list,/api/youpin/admin/marketPrice/abrade/config/template/update,/api/youpin/admin/marketPrice/abrade/config/template/delete,/api/youpin/admin/marketPrice/abrade/config/update,/api/youpin/admin/abrade/config/queryPage,/api/youpin/admin/abrade/config/add,/api/youpin/admin/abrade/config/edit,/api/youpin/admin/abrade/config/delete,/api/youpin/admin/abrade/config/queryALL,/api/youpin/admin/marketPrice/oneClickPrice/config/commonConfig,/api/youpin/admin/marketPrice/oneClickPrice/config/update,/api/youpin/admin/marketPrice/oneClickPrice/config/template/list,/api/youpin/admin/marketPrice/oneClickPrice/config/template/create,/api/youpin/admin/marketPrice/oneClickPrice/config/template/update,/api/youpin/admin/marketPrice/oneClickPrice/config/template/delete  ,/api/youpin/admin/secure/rise/new/config/update/task/config,/api/youpin/admin/secure/rise/new/config/update/task/get,/api/youpin/admin/secure/rise/new/config/writer/update,/api/youpin/admin/secure/rise/new/config/writer/config,/api/youpin/admin/secure/rise/new/config/template/list,/api/youpin/admin/secure/rise/new/config/template/update,/api/youpin/admin/secure/rise/new/config/template/delete,/api/youpin/admin/secure/rise/new/config/template/create,/api/youpin/admin/secure/rise/new/config/update,/api/youpin/admin/secure/rise/new/config/commonConfig,/api/youpin/admin/template/rent/reference/price/operation/log/page,/api/youpin/admin/template/rent/reference/price/admin/data/update,/api/youpin/admin/template/rent/reference/price/count/abnormal/status,/api/youpin/admin/template/rent/reference/price/update/abnormal/date,/api/youpin/admin/template/rent/reference/price/page,/api/youpin/admin/work-order/orderTypeList,/api/youpin/admin/purchaseOrder/v1/findPurchaseOrderByPage,/api/youpin/admin/purchaseOrder/v1/batchCreatePurchaseOrder,/api/youpin/admin/purchaseOrder/v1/batchUpdatePurchaseOrder,/api/youpin/admin/purchaseOrder/v1/batchStartPurchaseOrder,/api/youpin/admin/purchaseOrder/v1/batchSuspendPurchaseOrder,/api/youpin/admin/purchaseOrder/v1/batchDeletePurchaseOrder,/api/youpin/admin/purchaseOrder/traceLog/v1/findSystemPurchaseOrderTraceLogByPage,/api/youpin/admin/purchaseOrder/v1/queryTemplateCompensationAmount,/api/youpin/admin/order/getPrivateLeaseConfig,/api/youpin/admin/order/updatePrivateLeaseConfig,/api/youpin/admin/private/lease/getAuditOrderList,/api/youpin/admin//private/lease/orderAudit,/api/youpin/admin/private/lease/getAuditOrderDetail,/api/youpin/admin/work-order/sell/getWorkOrderRecordList,/api/youpin/admin/commodity/sortRule/config,/api/youpin/admin/commodity/sortRule/config/update,/api/youpin/admin/commodity/sortRule/config/template/create,/api/youpin/admin/commodity/sortRule/config/template/delete,/api/youpin/admin/commodity/sortRule/config/template/update,/api/youpin/admin/commodity/sortRule/config/template/list,/api/youpin/admin/account/bill/config/biz/type/query,/api/youpin/admin/account/bill/config/bill/type/query,/api/youpin/admin/account/bill/config/group/code/type/query,/api/youpin/admin/account/bill/config/fund/type/query,/api/youpin/admin/account/bill/config/gray/rule/code/name,/api/youpin/admin/account/bill/config/gray/rule/name/check,/api/youpin/admin/account/bill/config/gray/rule/unique/check,/api/youpin/admin/account/bill/config/gray/rule/add,/api/youpin/admin/account/bill/config/gray/rule/update,/api/youpin/admin/account/bill/config/gray/rule/page,/api/youpin/admin/account/bill/config/gray/whitelist/del,/api/youpin/admin/account/bill/config/gray/whitelist/add,/api/youpin/admin/account/bill/config/gray/whitelist/page,/api/youpin/admin/account/bill/config/filter/rule/add,/api/youpin/admin/account/bill/config/filter/rule/update,/api/youpin/admin/account/bill/config/filter/rule/page,/api/youpin/admin/account/bill/config/filter/rule/unique/check,/api/youpin/admin/account/bill/config/filter/rule/type/query,/api/youpin/admin/account/bill/config/filter/rule/biz/type/query,/api/youpin/admin/batch/order/product/list,/api/youpin/admin/batch/order/sticker/list,/api/youpin/admin/user/operate/check/risk,/api/youpin/admin/source/info/category/query,/api/youpin/admin/source/info/category/updateStatus,/api/youpin/admin/source/info/category/add,/api/youpin/admin/source/info/category/addSub,/api/youpin/admin/source/info/category/edit,/api/youpin/admin/source/info/category/delete,/api/youpin/admin/source/info/category/getCategoryDropList,/api/youpin/admin/source/info/rela/query,/api/youpin/admin/source/info/rela/add,/api/youpin/admin/source/info/rela/edit,/api/youpin/admin/source/info/rela/delete,/api/youpin/admin/source/info/rela/joinTemplate,/api/youpin/admin/source/info/rela/joinTemplateGroup,/api/youpin/admin/source/info/rela/getConfig,/api/youpin/admin/source/info/rela/getDetail,/api/youpin/admin/source/info/rela/queryJoinTemplateGroup,/api/youpin/admin/source/info/rela/unJoinTemplateGroup,/api/youpin/admin/source/info/rela/queryTemplateGroupDropList,/api/youpin/admin/purchase/config/getPurchaseCommonConfig,/api/youpin/admin/purchase/config/updatePurchaseCommonConfig,/api/youpin/admin/purchase/config/getPurchasePriceMarkUpConfigList,/api/youpin/admin/purchase/config/updatePurchasePriceMarkUpConfig,/api/youpin/admin/purchase/config/getPurchaseMinPriceConfigList,/api/youpin/admin/purchase/config/updatePurchaseMinPriceConfig,/api/youpin/admin/purchase/config/ratio/pageList,/api/youpin/admin/purchase/config/ratio/save,/api/youpin/admin/purchase/config/ratio/update,/api/youpin/admin/purchase/config/ratio/delete,/api/youpin/admin/purchase/special-setting/save,/api/youpin/admin/purchase/special-setting/update,/api/youpin/admin/purchase/special-setting/pageList,/api/youpin/admin/purchase/special-setting/delete,/api/youpin/admin/purchase/special-setting/extend-configs,/api/youpin/admin/purchase/order/getPurchaseOrderRecordList,/api/youpin/admin/purchase/order/getPurchaseUserPunishInfo,/api/youpin/admin/purchase/order/purchaseUserPunish,/api/youpin/admin/newPurchase/grey/config/template/create,/api/youpin/admin/newPurchase/grey/config/template/delete,/api/youpin/admin/newPurchase/grey/config/template/update,/api/youpin/admin/newPurchase/grey/config/template/list,/api/youpin/admin/newPurchase/config,/api/youpin/admin/newPurchase/config/update
+          filters:
+            - StripPrefix=3
+            - AdminLoginAuthFilter
+        - id: youpin-service-assets-redbag
+          uri: lb://youpin-service-assets-redbag
+          predicates:
+            - Path=/service/youpin/assets-redbag/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-orde-core-service
+          uri: lb://youpin-service-order-core
+          predicates:
+            - Path=/service/order/queryNotfinishedorderByUserId
+        - id: youpin-report-push
+          uri: lb://youpin-report-push
+          predicates:
+            - Path=/api/youpin/report/system/**
+          filters:
+            - StripPrefix=3
+        - id: youpin-service-order-core
+          uri: lb://youpin-service-order-core
+          predicates:
+            - Path=/service/youpin/order/gm/**
+          filters:
+            - StripPrefix=3
+        # bff新商品不需要认证的path
+        - id: youpin-base-bff-app-commodity-api-noAuth
+          uri: lb://youpin-base-bff-app-service
+          predicates:
+            - Path=/api/youpin/bff/new/commodity/v1/commodity/private/info,/api/youpin/bff/new/commodity/v1/commodity/config/getH5UrlConfig,/api/youpin/bff/new/commodity/v1/inspection/config,/api/youpin/bff/new/commodity/v1/inspection/commodity/parse,/api/youpin/bff/new/commodity/v1/inspection/commodity/info
+          filters:
+            - StripPrefix=5
+        # bff-payment不需要认证的path
+        - id: youpin-base-bff-app-payment-api-noAuth
+          uri: lb://youpin-base-bff-app-service
+          predicates:
+            - Path=/api/youpin/bff/payment/noAuth/v1/iu/trade/order/status,/api/youpin/bff/user-bff/noAuth/user/auth/userLogOffRestore
+          filters:
+            - StripPrefix=5
+        - id: youpin-trde-monitor-for-pre
+          uri: lb://youpin-trade-order-monitor-service
+          predicates:
+            - Path=/api/youpin/bff/trade/monitor/v1/trade/monitor/price/trend/batch-save
+          filters:
+            - StripPrefix=5
+        # bff新商品需要认证的path
+        - id: youpin-base-bff-app-commodity-api-auth
+          uri: lb://youpin-base-bff-app-service
+          predicates:
+            - Path=/api/youpin/bff/new/commodity/v1/commodity/private/init-shelves-page,/api/youpin/bff/new/commodity/v1/commodity/private/init-shelves-page-detail,/api/youpin/bff/new/commodity/v1/commodity/private/putOn,/api/youpin/bff/new/commodity/v1/commodity/private/changePrice,/api/youpin/bff/new/commodity/v1/commodity/private/query/list,/api/youpin/bff/new/commodity/v3/purchase/user/info,/api/youpin/bff/new/commodity/v1/commodity/list/sell,/api/youpin/bff/new/commodity/v1/commodity/list/lease,/api/youpin/bff/new/commodity/v3/price/templatePricing,/api/youpin/bff/new/commodity/v1/commodity/info,/api/youpin/bff/new/commodity/v1/commodity/change/price/extend/info,/api/youpin/bff/new/commodity/v1/inv/getUserCanPurInvQuantity,/api/youpin/bff/new/commodity/v1/inv/upload/getInventoryExtendInfo,/api/youpin/bff/new/commodity/compensation/query/standard/text/list,/api/youpin/bff/new/commodity/v1/commodity/change/price/refresh/price,/api/youpin/bff/new/commodity/v1/commodity/change/price/confirm/refresh/price,/api/youpin/bff/new/commodity/v1/commodity/change/price/init/info,/api/youpin/bff/new/commodity/v1/inspection/asset/parse,/api/youpin/bff/new/commodity/v1/inspection/asset/info,/api/youpin/bff/new/commodity/v1/inv/checkOnShelfQualificationInfo,/api/youpin/bff/new/commodity/v1/commodityBatchBuy/template/info,/api/youpin/bff/new/commodity/v1/commodityBatchBuy/countNum,/api/youpin/bff/new/commodity/v1/commodityBatchBuy/batchCommodityIdList,/api/youpin/bff/new/commodity/v1/commodityBatchBuy/batchCommodityList,/api/youpin/bff/new/commodity/v1/commodityBatchBuy/batchDeleteCompute,/api/youpin/bff/new/commodity/commodity/change/price/v3/init/info,/api/youpin/bff/new/commodity/commodity/change/price/v3/refresh/price,/api/youpin/bff/new/commodity/v3/inv/upload/getInventoryExtendInfo,/api/youpin/bff/new/commodity/compensation/v3/standard/text/list,/api/youpin/bff/new/commodity/v2/commodity/private/shareCode/generate,/api/youpin/bff/new/commodity/v2/commodity/private/lease/list
+          filters:
+            - StripPrefix=5
+            - UserLoginAuthFilter
+        - id: youpin-base-bff-app-service-api
+          uri: lb://youpin-base-bff-app-service
+          predicates:
+            - Path=/api/youpin/bff/trade/sale/v1/buy/list,/api/youpin/bff/trade/sale/v1/sell/list,/api/youpin/bff/trade/common/config,/api/youpin/bff/trade/v1/order/sell/cancel,/api/youpin/bff/trade/v1/order/sell/reminders,/api/youpin/bff/trade/todo/v1/orderTodo/list,/api/youpin/bff/trade/todo/v1/orderTodo/topList,/api/youpin/bff/trade/v1/order/sell/delivery/send-offer,/api/youpin/bff/trade/v1/order/sell/delivery/resend-offer,/api/youpin/bff/trade/v1/order/query/detail,/api/youpin/bff/trade/v1/order/sell/pre-check,/api/youpin/bff/trade/v1/order/sell/confirm-page,/api/youpin/bff/trade/v1/order/sell/create,/api/youpin/bff/trade/v1/order/pay/createPayOrder,/api/youpin/bff/trade/v1/order/pay/getPayStatus,/api/youpin/bff/trade/v1/order/sell/delivery/get-offer-status,/api/youpin/bff/trade/v1/order/sell/delivery/create-work-order,/api/youpin/bff/trade/v1/order/sell/trace,/api/youpin/bff/trade/v1/order/pay/cashier_again,/api/youpin/bff/trade/order/sale/commodity/checkNewOrder,/api/youpin/bff/trade/v1/offer/status/fast/select,/api/youpin/bff/trade/v1/order/sell/delivery/customer-service-intervention,/api/youpin/bff/trade/v1/order/query/token/confirmation/steaminfo,/api/youpin/bff/trade/v1/order/sell/delivery/choiceSellersSendOffer,/api/youpin/bff/trade/v1/order/sell/pre-check-giving,/api/youpin/bff/trade/v1/order/sell/confirm-giving-page,/api/youpin/bff/trade/v1/order/sell/create-giving,/api/youpin/bff/trade/util/v1/upload,/api/youpin/bff/trade/util/v1/image/url,/api/youpin/bff/trade/v1/query/steaminfo,/api/youpin/bff/trade/v1/user/presenter/createPresenter,/api/youpin/bff/trade/v1/user/presenter/updatePresenter,/api/youpin/bff/trade/v1/user/presenter/getPresenterList,/api/youpin/bff/trade/v1/user/presenter/batchDeletePresenter,/api/youpin/bff/trade/v1/user/presenter/checkPresenterInfo,/api/youpin/bff/trade/v1/user/presenter/getSteamIdByTradeLinks,/api/youpin/bff/trade/v1/user/presenter/getTradePresenterInfo,/api/youpin/bff/trade/v1/user/presenter/sendSmsCode,/api/youpin/bff/trade/v1/user/apikey/getGuardInfoByUser,/api/youpin/bff/trade/v1/user/apikey/relieveGuardByUser,/api/youpin/bff/trade/v1/api/trade/order/messageBoard,/api/youpin/bff/trade/v1/trade/monitor/price/trend,/api/youpin/bff/trade/v1/trade/monitor/price/trend/filter/info,/api/youpin/bff/trade/sell/page/v1/waitDeliver/waitDeliverList,/api/youpin/bff/trade/sell/page/v1/waitDeliver/associativeWordSearch,/api/youpin/bff/trade/appeal/**,/api/youpin/bff/trade/v1/order/lease/out/list,/api/youpin/bff/trade/v1/order/lease/out/list/keywords/match,/api/youpin/bff/trade/app/preference/setting/lease/day,/api/youpin/bff/trade/v1/order/sell/incrementServiceCreate,/api/youpin/bff/trade/v1/order/sell/confirm-increment-page,/api/youpin/bff/trade/v1/order/pay/cashier_again_v2,/api/youpin/bff/trade/right/value/added/v1/queryUserRightList,/api/youpin/bff/trade/right/value/added/v1/queryReparationList,/api/youpin/bff/trade/right/value/added/v1/reparationApply,/api/youpin/bff/trade/right/value/added/v1/queryCompensateRecordList,/api/youpin/bff/trade/util/v2/upload,/api/youpin/bff/trade/right/value/added/v2/queryOpenRecordList,/api/youpin/bff/trade/right/value/added/v2/queryReparationList,/api/youpin/bff/trade/right/value/added/v1/readLockUnbinding,/api/youpin/bff/trade/right/value/added/v1/reparationApplyDetail,/api/youpin/bff/service-user/user/v1/realName/authentication/query,/api/youpin/bff/service-user/user/v1/realName/authentication/initialize,/api/youpin/bff/service-user/user/getUserSigningAccountList/page,/api/youpin/bff/service-user/user/userSigningAccount/delete,/api/youpin/bff/service-user/user/getUserSigningAccount/info,/api/youpin/bff/service-user/user/getBindingSigningAccountList,/api/youpin/bff/service-user/user/signing/account/add,/api/youpin/bff/service-user/user/signing/account/status/query,/api/youpin/bff/service-user/user/signing/account/init,/api/youpin/bff/trade/v1/presenter/send/sms/check,/api/youpin/bff/trade/merge/batch/buy/v1/confirm-page,/api/youpin/bff/trade/merge/batch/buy/v1/pre-check,/api/youpin/bff/trade/v1/batchBuyOrder/sell/pre-check,/api/youpin/bff/service-user/v1/userBatchBuy/checkInBatchBuyPage,/api/youpin/bff/service-user/app/preference/setting/v1/queryUserCustomConfig,/api/youpin/bff/service-user/app/preference/setting/v1/setUserCustomConfig,/api/youpin/bff/trade/v1/trade/monitor/price/trendList,/api/youpin/bff/trade/v1/trade/monitor/price/trend/risefall/addGuess,/api/youpin/bff/trade/v1/trade/monitor/price/trend/risefall/query,/api/youpin/bff/service-user/user/signing/account/config,/api/youpin/bff/payment/v1/cashier/query/list,/api/youpin/bff/payment/v1/pay/order/confirm,/api/youpin/bff/payment/v1/pay/purchase/page/init,/api/youpin/bff/payment/v1/pay/order/status,/api/youpin/bff/payment/v1/pay/queryIuJumpFlag,/api/youpin/bff/payment/v1/bill/query/export/queryResult,/api/youpin/bff/payment/v1/bill/query/pc/user/bill/list/export,/api/youpin/bff/payment/v1/bill/query/user/bill/switch/info,/api/youpin/bff/payment/v1/bill/query/user/easy/bill/type,/api/youpin/bff/payment/v1/bill/query/app/user/bill/list/simple,/api/youpin/bff/payment/v1/bill/query/user/bill/info,/api/youpin/bff/payment/v1/bill/query/pc/user/bill/income/expenditure,/api/youpin/bff/payment/v1/bill/query/pc/user/bill/list/simple,/api/youpin/bff/payment/v1/bill/query/app/user/bill/list/related,/api/youpin/bff/trade/v1/order/sell/delivery/confirmAndSendOfferList,/api/youpin/bff/trade/v1/order/sell/delivery/queryOffersStatus,/api/youpin/bff/trade/v1/order/query/buy/confirmAndSendOfferOrder,/api/youpin/bff/trade/v1/order/query/sell/confirmAndSendOfferOrder,/api/youpin/bff/trade/v1/order/query/failedCommodities,/api/youpin/bff/trade/v1/order/batch/sell/createBatchOrder,/api/youpin/bff/trade/v1/order/batch/sell/queryBatchOrderInfo,/api/youpin/bff/trade/v1/order/batch/sell/batchOrderGraySwitch,/api/youpin/bff/trade/v1/order/query/sell/sendOfferV2,/api/youpin/bff/trade/v1/order/sell/delivery/confirmOffer,/api/youpin/bff/trade/v1/order/sell/delivery/confirmOfferStatus,/api/youpin/bff/trade/v1/order/query/sell/sendOfferV2,/api/youpin/bff/trade/v1/order/sell/delivery/confirmOffer,/api/youpin/bff/trade/v1/order/sell/delivery/confirmOfferStatus,/api/youpin/bff/trade/v1/order/sell/delivery/sendOfferV2,/api/youpin/bff/bffUser/getUserLogOffConfig,/api/youpin/bff/payment/v1/query/pay/page/info,/api/youpin/bff/payment/v1/counter/offer/create,/api/youpin/bff/service-user/user/v1/realName/authentication/query/code,/api/youpin/bff/trade/purchase/order/preCheck,/api/youpin/bff/trade/purchase/order/getTemplatePurchaseInfo,/api/youpin/bff/trade/purchase/order/getTemplateFilterConfig,/api/youpin/bff/trade/purchase/order/checkUserCookie,/api/youpin/bff/trade/purchase/order/prePurchaseOrderCheck,/api/youpin/bff/trade/purchase/order/prePurchaseOrderCheck,/api/youpin/bff/trade/purchase/order/savePurchaseOrder
+          filters:
+            - StripPrefix=4
+            - UserLoginAuthFilter
+        # 开发平台 交易核心服务相关接口
+        - id: openapi-youpin-trade-order-core-service
+          uri: lb://youpin-trade-order-core-service
+          filters:
+            - StripPrefix=1
+          predicates:
+            - Path=/openapi/v1/api/trade/order/bigCustomer/cancel,/openapi/v1/api/trade/order/purchase/createBigCustomerPurchaseOrder,/openapi/v1/api/trade/order/purchase/queryPurchaseOrderDetail,/openapi/v1/api/trade/order/purchase/checkTradeUrl,/openapi/v1/api/trade/order/merchant/createOrder/byTemplateId,/openapi/v1/api/trade/order/merchant/createOrder/byCommodityId,/openapi/v1/api/trade/order/merchant/async/createOrder/byTemplateId,/openapi/v1/api/trade/order/merchant/async/createOrder/byCommodityId
+            - RemoteAddr=172.20.0.0/16,172.18.144.0/20
+        # 开发平台 用户服务
+        - id: openapi-youpin-service-user
+          uri: lb://youpin-service-user
+          filters:
+            - StripPrefix=2
+          predicates:
+            - Path=/service/user/v1/getAssetsInfo,/openapi/youpin/service/user/v1/getInfo,/openapi/youpin/service/user/v1/auth,/openapi/youpin/service/user/v1/getAccountStatus,/openapi/youpin/service/user/v1/getAssetsInfo,/openapi/youpin/service/user/v1/checkRealName
+            - RemoteAddr=172.20.0.0/16,172.18.144.0/20
+        # 开发平台 商品服务
+        - id: openapi-youpin-commodity
+          uri: lb://youpin-commodity
+          filters:
+            - StripPrefix=2
+          predicates:
+            - Path=/openapi/youpin/service/commodity/v1/template/getFileUrl,/openapi/youpin/service/commodity/v1/commodity/getByTemplate,/openapi/youpin/service/commodity/v1/commodity/queryOnSaleCommodityInfo,/openapi/youpin/service/commodity/v1/commodity/queryViewChart,/openapi/youpin/service/commodity/v1/commodity/queryTemplateSaleByCategory,/openapi/youpin/service/commodity/v1/commodity/batchGetOnSaleCommodityInfo
+            - RemoteAddr=172.20.0.0/16,172.18.144.0/20
+        # 开发平台 bff服务
+        - id: openapi-youpin-base-bff-app-service
+          uri: lb://youpin-base-bff-app-service
+          filters:
+            - StripPrefix=3
+          predicates:
+            - Path=/openapi/youpin/bff/v1/order/query/purchasing/detail,/openapi/youpin/bff/util/v1/upload,/openapi/youpin/bff/util/v1/image/url,/openapi/youpin/bff/big/custom/order/history/query,/openapi/youpin/bff/v1/order/query/bigCustomer/order/detail,/openapi/youpin/bff/v1/order/sell/open-platform/queryTradeOrderList,/openapi/youpin/bff/v1/order/sell/open-platform/queryTradeOrder,/openapi/youpin/bff/v1/order/sell/open-platform/queryTradeOrderDetail,/openapi/youpin/bff/v1/order/sell/open-platform/queryTradeOrderByOfferId,/openapi/youpin/bff/v1/order/sell/open-platform/delivery/send-offer
+            - RemoteAddr=172.20.0.0/16,172.18.144.0/20
+        - id: svc-user-app-api
+          uri: http://svc-user.default:7000
+          predicates:
+            - Path=/api/youpin/bff/user/v1/assets/money/transfer/purchaseMoney,/api/youpin/bff/user/v1/assets/purchaseMoney/transfer/money
+          filters:
+            - UserLoginAuthFilter
+            - RewritePath=/api/youpin/bff/user/v1/assets/money/transfer/purchaseMoney,/api4gateway/user/UserAssets/MoneyTranferToPurchaseMoney
+            - RewritePath=/api/youpin/bff/user/v1/assets/purchaseMoney/transfer/money,/api4gateway/user/UserAssets/PurchaseMoneyTranferToMoney
+        # homepage不需要认证接口
+        - id: homepage-api-noAuth
+          uri: lb://homepage
+          predicates:
+            - Path=/api/homepage/es/commodity/GetCsGoPagedList,/api/homepage/v2/es/commodity/GetCsGoPagedList,/api/homepage/v3/es/commodity/GetCsGoPagedList,/api/homepage/es/template/GetTemplates,/api/homepage/es/template/GetCsGoPagedList,/api/homepage/commodity/template/match,/api/v2/commodity/template/GetCsGoNewOnShelf,/api/v3/commodity/template/GetCsGoNewOnShelf,/api/v2/commodity/template/GetCsGoPagedList,/api/v3/commodity/template/GetCsGoPagedList,/api/v2/commodity/commodity/GetCsGoPagedList,/api/v3/commodity/commodity/GetCsGoPagedList,/api/homepage/search/match,/api/homepage/search/list,/api/homepage/newUser/template/getList,/api/homepage/commodity/template/getStickers,/api/homepage/new/es/commodity/GetCsGoPagedList,/api/homepage/new/es/template/GetCsGoPagedList,/api/homepage/search/new/list,/api/homepage/v2/detail/template/info,/api/homepage/v2/detail/commodity/list/sell,/api/homepage/v2/detail/commodity/list/lease,/api/homepage/v2/list/template/zero/rent,/api/homepage/v2/detail/commodity/list/zero/rent,/api/homepage/v2/zero/rent/detail/template/info,/api/homepage/v2/query/ultraLongLease/template/filterCriteria,/api/homepage/v2/merge/commodity/updatePrice,/api/homepage/v3/detail/commodity/list/lease,/api/homepage/v3/detail/commodity/lease/info,/api/homepage/v3/detail/commodity/ad/addProductUserBlack
+          filters:
+            - HandleUserIdFilter
+        # homepage公共接口
+        - id: homepage-api-public
+          uri: lb://homepage
+          predicates:
+            - Path=/api/homepage/commodity/views,/api/homepage/newUser/template/indexList,/api/homepage/newUser/commoditys/getList,/api/homepage/commodity/getConfig,/api/homepage/config,/api/homepage/template/v1/info,/api/homepage/commodity/getUserIdByCommodityId,/api/homepage/v2/newUser/template/indexList,/api/homepage/v2/newUser/template/getList,/api/homepage/v2/newUser/commoditys/getList,/api/homepage/commodity/template/getHaveBuZhang,/api/homepage/commodity/lease/sort/list,/api/homepage/v2/new/es/template/getZeroRentTopList
+        - id: youpin-service-activity
+          uri: lb://youpin-service-activity
+          predicates:
+            - Path=/api/youpin/service-activity/activity-config/queryByCode,/api/youpin/service-activity/activity/certification/add
+          filters:
+            - StripPrefix=3
+            - HandleUserIdFilter
+        # 登陆商品导购（后续废弃）
+        - id: login-youpin-guide-business-front-service
+          uri: lb://youpin-guide-business-front-service
+          predicates:
+            - Path=/api/youpin/guide-business-front/guide/v1/config/login/page-info
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        # 登录、未登录商品导购
+        - id: youpin-guide-business-front-service
+          uri: lb://youpin-guide-business-front-service
+          predicates:
+            - Path=/api/youpin/guide-business-front/guide/v1/config/page-info,/api/youpin/guide-business-front/guide/v1/config/pageInfoV2,/api/youpin/guide-business-front/guide/index/config/v1/preference
+          filters:
+            - StripPrefix=3
+            - HandleUserIdFilter
+        - id: youpin-infra-provider-mock-service
+          uri: lb://youpin-infra-provider-mock-service
+          predicates:
+            - Path=/mock/api/homepage/es/template/GetCsGoPagedList,/mock/api/homepage/v2/es/commodity/GetCsGoPagedList,/mock/api/homepage/commodity/getConfig,/mock/api/user/Account/getUserInfo,/mock/api/homepage/commodity/views,/mock/api/youpin/exception,/mock/api/youpin/largeResp
+          filters:
+            - StripPrefix=1
+        - id: auth-youpin-guide-business-front-service
+          uri: lb://youpin-guide-business-front-service
+          predicates:
+            - Path=/api/youpin/guide-business-front/guide/v1/activity/trade/lease/send/info,/api/youpin/guide-business-front/guide/v1/activity/trade/lease/send/rate/reset
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        - id: youpin-infra-provider-mock-service-security
+          uri: lb://youpin-infra-provider-mock-service
+          predicates:
+            - Path=/security/mock/api/youpin/bff/order/record/send-list,/security/mock/api/youpin/bff/order/lease-record-list,/security/mock/api/youpin/bff/order/detail
+          filters:
+            - StripPrefix=2
+            - name: ModifyRequestBody
+              args:
+                inClass: java.lang.String
+                outClass: java.lang.String
+                rewriteFunction: '#{@decryptRequestBodyFunction}'
+            - name: ModifyResponseBody
+              args:
+                inClass: java.lang.String
+                outClass: java.lang.String
+                rewriteFunction: '#{@encryptResponseBodyFunction}'
+        - id: youpin-safe-risk-manage
+          uri: lb://youpin-safe-risk-manage
+          predicates:
+            - Path=/api/youpin/safe/admin/lease/abstraction/detail,/api/youpin/safe/admin/lease/abstraction/defaultList,/api/youpin/safe/admin/lease/abstraction/group/update,/api/youpin/safe/admin/lease/label/type/add,/api/youpin/safe/admin/lease/datasource/listByParam,/api/youpin/safe/admin/lease/history/up,/api/youpin/safe/admin/lease/history/list,/api/youpin/safe/admin/lease/history/detail,/api/youpin/safe/admin/lease/history/types,/api/youpin/safe/admin/lease/online,/api/youpin/safe/admin/lease/online/list,/api/youpin/safe/admin/lease/risk/strategy/update,/api/youpin/safe/admin/lease/datalist/selectorList,/api/youpin/safe/admin/lease/abstraction/datasource,/api/youpin/safe/admin/lease/abstraction/add,/api/youpin/safe/admin/lease/abstraction/update,/api/youpin/safe/admin/lease/abstraction/checkStatus,/api/youpin/safe/admin/lease/abstraction/delete,/api/youpin/safe/admin/lease/abstraction/detail,/api/youpin/safe/admin/lease/abstraction/panelList,/api/youpin/safe/admin/lease/datasource/database,/api/youpin/safe/admin/lease/datasource/test,/api/youpin/safe/admin/lease/datasource/detail,/api/youpin/safe/admin/lease/datasource/checkStatus,/api/youpin/safe/admin/lease/datasource/update,/api/youpin/safe/admin/lease/scene/add,/api/youpin/safe/admin/lease/scene/detail,/api/youpin/safe/admin/lease/scene/checkStatus,/api/youpin/safe/admin/lease/scene/update,/api/youpin/safe/admin/lease/abstraction/group/add,/api/youpin/safe/admin/lease/abstraction/group/delete,/api/youpin/safe/admin/lease/credit/update,/api/youpin/safe/admin/lease/credit/delete,/api/youpin/safe/admin/lease/abstraction/group/list,/api/youpin/safe/admin/lease/datasource/add,/api/youpin/safe/admin/lease/datasource/delete,/api/youpin/safe/admin/lease/credit/list,/api/youpin/safe/admin/lease/abstraction/list,/api/youpin/safe/admin/lease/risk/strategy/list,/api/youpin/safe/admin/lease/credit/one,/api/youpin/safe/admin/lease/risk/strategy/add,/api/youpin/safe/admin/lease/engine/result/query,/api/youpin/safe/admin/lease/scene/selectorList,/api/youpin/safe/admin/lease/engine/result/details,/api/youpin/safe/admin/lease/operate/result/query,/api/youpin/safe/admin/lease/operate/type/query,/api/youpin/safe/admin/lease/datalist/list,/api/youpin/safe/admin/lease/datalist/add,/api/youpin/safe/admin/lease/risk/strategy/release/priority,/api/youpin/safe/admin/lease/datalist/remove,/api/youpin/safe/admin/lease/risk/strategy/release/priority/next,/api/youpin/safe/admin/lease/risk/strategy/release/flow/update,/api/youpin/safe/admin/lease/datasource/list,/api/youpin/safe/admin/lease/scene/list,/api/youpin/safe/admin/lease/scene/add,/api/youpin/safe/admin/lease/credit/strategy/list,/api/youpin/safe/admin/lease/risk/strategy/findAll,/api/youpin/safe/admin/lease/risk/strategy/param/check/next1,/api/youpin/safe/admin/lease/risk/strategy/param/check/next2
+          filters:
+            - StripPrefix=5
+            - AdminLoginAuthFilter
+        ##活动服务配置
+        - id: youpin-service-activity
+          uri: lb://youpin-service-activity
+          predicates:
+            - Path=/api/youpin/service-activity/activity-config/queryByCode,/api/youpin/service-activity/activity/certification/add
+          filters:
+            - StripPrefix=3
+            - HandleUserIdFilter
+        ##风控服务网关
+        - id: youpin-safe-risk-gateway-web
+          uri: lb://youpin-safe-risk-gateway-web
+          predicates:
+            - Path=/api/youpin/youpin-safe-gateway/service/userRisk/lease/find
+          filters:
+            - StripPrefix=3
+        - id: youpin-payment-transaction-gateway-service
+          uri: lb://youpin-payment-transaction-gateway-service
+          predicates:
+            - Path=/api/youpin/zft/callback/alipay/auth/pay/freeze,/api/youpin/zft/callback/alipay/auth/pay/auth-pay,/api/youpin/zft/service/alipay/async/message/callback,/api/youpin/zft/callback/alipay/auth/pay/auth-pay,/api/youpin/zft/service/alipay/async/message/callback,/api/youpin/qr/callback/qrcode/create_order_url,/api/youpin/qr/callback/qrcode/notify_url,/api/youpin/zft/callback/alipay/app_pay/notify_url,/api/youpin/zft/service/alipay/async/message/callback
+          filters:
+            - StripPrefix=3
+        - id: youpin-infra-upload-file-service
+          uri: lb://youpin-infra-upload-file-service
+          predicates:
+            - Path=/api/youpin/infra/upload/img/upload,/api/youpin/infra/upload/img/upload/batch
+          filters:
+            - StripPrefix=4
+        - id: youpin-infra-steam-proxy-service
+          uri: lb://youpin-infra-steam-proxy-service
+          predicates:
+            - Path=/service/youpin/steam/gateway/steam/v3/proxy/**
+          filters:
+            - StripPrefix=4
+        - id: youpin-base-message-notification-service-api
+          uri: lb://youpin-base-message-notification-service
+          predicates:
+            - Path=/api/youpin/message/v1/base/messageNotification/sms/callback/huaweiCloud,/api/youpin/message/v1/base/messageNotification/sms/callback/xuanweReport,/api/youpin/message/v1/base/messageNotification/sms/callback/alicloud
+          filters:
+            - StripPrefix=3
+        # 交易前台
+        - id: youpin-match-api-auth
+          uri: lb://youpin-match
+          predicates:
+            - Path=/api/youpin/match/api/v1/match/lease/order/create
+          filters:
+            - StripPrefix=3
+            - UserLoginAuthFilter
+        - id: youpin-bigdata-open-api-service
+          uri: lb://youpin-bigdata-open-api-service
+          predicates:
+            - Path=/api/youpin/bigdata/order/list/page,/api/youpin/bigdata/bill/list/page
+          filters:
+            - StripPrefix=3
+        # 云检视
+        - id: youpin-infra-inspect-api-service-no-auth
+          uri: lb://youpin-infra-inspect-api-service
+          predicates:
+            - Path=/api/youpin/infra/inspect/hs/inspect/callback,/api/youpin/infra/inspect/commodity/inspect/detail,/api/youpin/infra/inspect/hmc/inspect/callback/DVk7unmDwsAE1CEC44v6BZzEBG2OIYgcKluy9vvqD9BKl2tH9Ekl7ttjbINObUXd
+          filters:
+            - StripPrefix=4
+        - id: youpin-infra-inspect-api-service
+          uri: lb://youpin-infra-inspect-api-service
+          predicates:
+            - Path=/api/youpin/infra/inspect/commodity/inspect/status/report,/api/youpin/admin/inspect/inspect/list,/api/youpin/admin/inspect/inspect/oneClick/offline,/api/youpin/infra/inspect/inspect/getConfig,/api/youpin/admin/inspect/inspect/batch/offline,/api/youpin/admin/inspect/inspect/inspecting/count,/api/youpin/admin/inspect/inspect/inspectStatus
+          filters:
+            - StripPrefix=4
+            - UserLoginAuthFilter
+            - ResolveUserIdFilter
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedHeaders: "*"
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+                POST
+                DELETE
+                PUT
+                OPTION
+  redis:
+    password: 'XbNaw1d2kFUw'
+    sentinel:
+      master: youpin898master
+      nodes: 172.20.2.226:21038,172.20.2.225:21038,172.20.27.79:21038
+  rabbitmq:
+    publisher-returns: true
+    publisher-confirm-type: SIMPLE
+    listener:
+      simple:
+        acknowledge-mode: manual
+        max-concurrency: 10
+        concurrency: 2
+        prefetch: 1000
+        retry:
+          #监听重试是否可用
+          enabled: true
+          #最大重试次数 默认为3
+          max-attempts: 10
+          #传递消息的时间间隔 默认1s
+          initial-interval: 1000
+          multiplier: 2
+    host: ${RABBITMQ_HOST}
+    port: 5672
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+server:
+  compression:
+    enabled: true
+    mime-types: application/json
+  port: 10000
+knife4j:
+  enable: true
+  username: Tz41Ejjb3tnQU36k
+  password: qGcaUSDblpQX17k3
+rsa:
+  config:
+    enabled: true
+    ignoreList:
+      - /api/youpin/vip/member/receive_notify
+      - /api/youpin/vip/manage/**
+      - /api/youpin/vip/v2/member/authFreeze/receive_notify
+      - /api/youpin/vip/v2/member/tradeStatus/receive_notify
+auth:
+  vip:
+    enabled: false
+    authList:
+      - /api/youpin/vip/manage/**
+jwt:
+  expireAt: 604800000
+  issure: youpin898.com
+  audience: admin.youpin898.com
+  secret: 0lTfRnm0EEme2Jn86yKB51kmdWJh5teu
+  youpinAdmin:
+    expireAt: 604800000
+    issure: admin.youpin898.com
+    secret: 45684FA7-9614-47A4-A971-A5DB8C898158
+    audience: admin
+    accessExpire: 1440
+    refreshExpire: 2
+    multipart: true
+  youpinUser:
+    expireAt: 604800000
+    issure: youpin898.com
+    secret: 6442AAB6-E3C9-4969-B3E0-B1B27CBF379B
+    audience: user
+    accessExpire: 1440
+    refreshExpire: 2
+    multipart: true
+filters:
+  request:
+    global:
+      # 服务端的公钥
+      serverRsaPublicKey: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0dPEMUuou9S8aeyxraN3JmZo7VLjsoTLPGdFduQcgbVJRYJMRPbL3ju73afvqvNDURBkFDcfgkeJFfVoFugMz5aLL8Pa/kTH9ClmDYQarhf4JHo8p5XDFlcih6PEU8gKKo+XoqeAld/fOyg3GRQ6+XY5iJ+/xOsoDHuAaKhfsSY2p6Am3tt5YpYeQKFsN1da7ewb+Fp2MvVhxLKhxiazSs27x7XdFlq0KlfWXKm2RqMuR90S59547KFjEkioyF9bLh6mh8OdqTuATC2T6Ne2Q0GeNJP68jeptgzsrlCXdNisQ3Rgv/pimxfF+uSoqJLH+4PeLYwvfTUZo5QzjeMESQIDAQAB'
+      # 服务端的私钥
+      serverRsaPrivateKey: 'MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDR08QxS6i71Lxp7LGto3cmZmjtUuOyhMs8Z0V25ByBtUlFgkxE9sveO7vdp++q80NREGQUNx+CR4kV9WgW6AzPlosvw9r+RMf0KWYNhBquF/gkejynlcMWVyKHo8RTyAoqj5eip4CV3987KDcZFDr5djmIn7/E6ygMe4BoqF+xJjanoCbe23lilh5AoWw3V1rt7Bv4WnYy9WHEsqHGJrNKzbvHtd0WWrQqV9ZcqbZGoy5H3RLn3njsoWMSSKjIX1suHqaHw52pO4BMLZPo17ZDQZ40k/ryN6m2DOyuUJd02KxDdGC/+mKbF8X65Kioksf7g94tjC99NRmjlDON4wRJAgMBAAECggEARKJNUYabCd2bR9apg8+tgL0M41wyqMkxJW/uU+ZnwLHI5tipFAHaS7YkTGvLRJLP2StQYSBqyRWXLLyaMKv0zM5EdvpMntFmymHkRNWKWJn0jBID1xlwt9UGsXGLHZCYarWPdx/tOpkBDvunkieA5uqaBSuj8citz+9x4En7CxmKBxUWZtnn+ayGpkQZtT1IQiG3UGuK3itwxjxNWdANhJHtsPTI3X6OW1+pKF77dmhBhIZxXzDxHAnCHVlzcqL36FOEjhL57gW/FhUc0cTTgCikA3/iaTjGF8+pmLfAE5sVhMnvfb0u/8lRbl/ZmPaV/athejMs6hr3U6fOgtdGgQKBgQDzZ6++dmr6/Wgk7UE0ySdB9+wQgkqrR//5TDLke6KjSXzmMFHgk14MQYb+zKLWRhEGGoppyveucV42xNG054DB8XwC0tmhndzrthpYOG/K/Hjk35GNxZwDug9OfzH3g2hQuNA8t1eV4wUBETIxazrrcKKrM7Pjt+3FEoLFmUvRsQKBgQDcr0jeQIaTldZN12vTDdolLDFxgPFKF138Da1ZygoSRETgl195dQifn19Z5ZnxPeVz/L5RlSdGJA1A1F3ICdNUr7oYTQ9vPJYPvu0dlbU6Z3eyFOTuTS75AoafjYdYq1BQ19Qh1x3RKWw2Qf4hZBrKcoaLvuEt76yOqCyYcvyqGQKBgHXh9Z+MwmskZ1fbAAWMllLAu7eTIo6ppDMc0FkP98iVQsRJCp51QMs2wSaN/R9Bd+U43Wg3QJVfmn1z/QxcQmOrjJ/hdj1rsx8FZuTrEFmCxRoznM7IsbKsXdVqjMyO++p8V33QXb7d4AKQTXrZsANu3ZmExM64uZMEUAlbIPlBAoGBAKYKKBw4lkiimvw0UccZDAGd75GDv4fMbwU+0SfWcJ9vyBbnLYl3ucZHpflAXAP7WxFan2NIgqUuaN5XKjxg0CVOlgjEqhE6l3k/YK46voEz6gYN3HVDk0z9TobreGMJekNpMA1KCgAeV3G3U1qSM+oQIxUvx8LFKqKm++6zzVC5AoGAJzTwlSHeL8oZ3Hspn8rYPjP0qnp3aqz1oM2rqAsTe9qsD6LI+J/OUzV5nQN/mesqLz33wfNBCMYJ08YdsE5eLiMXIBoccQZpHDHhWB+0d/csBWiOAoLcBVRQ9NL860nrBSNgmzj9/TRWSxQbu+tcISHSGY7RFd6Ylr9KdqN5sqI='
+      # 客户端的公钥
+      clientRsaPublicKey: 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi9Yvn5+tghxVABCJbLklPAzOD4ao6oluIrQQp3vzEXyiLAwnXr7sNThwlfNCAlI3eZHvka+wL8Dt4FPPDOlIxrwqySv5KxJWIoCbMHoYI5kTCQGsvLTu/IdgAYML6FH5Dzj+yByWsYlGmRhs4n3dnBTTUYETfR9tB075c5iIYATnElRFZiboKNgY8zs1OPy7tdA/2qzp/RHqH116XxAQKO/fTk5u56l8yjAPRIHZf/GSD4V62zJeglYOLMmFebeOk9Fu360cOy+/G9jt4p8Xh9i3IRIwxyg0EzYnsSf8RUFQodYlYKCMGigSwuizEz4dOoGVQ1ESiQfcJ38kyfoaTQIDAQAB'
+      # 默认加密配置,统筹全局, 如果为false,则所有路径均不加密,优先级最高; 如果为true,则看secretPaths和ignorePaths, 如果都不存在或者都为空,则全站加密
+      secretEnabled: true
+
+logging:
+  level:
+    root: info
+    sql: info
+    web: info
+
+management:
+  server:
+    port: 18091
+  endpoint:
+    shutdown:
+      enabled: true
+  endpoints:
+    enabled-by-default: true
+    web:
+      exposure:
+        include: "metrics,prometheus,health,gateway"
+        exclude: "env,trace"
+  metrics:
+    tags:
+      application: ${spring.application.name}
+# 业务限流配置
+business-limiting-config:
+  # redis限流是否开启
+  redisLimitingEnable: true
+  # redis限流自动开启时间
+  redisLimitingAutoOpenTime: 1
+  # 封禁用户是否开启
+  prohibitedUserEnable: true
+  # 限流配置查询地址
+  limitingConfigUrl: http://youpin-sysconfig:10200/limit/rule/query-all-rule-config
+#限流redis
+limiting:
+  redis:
+    database: 2
+    password: ${REDIS_PASSWORD}
+    sentinel:
+      master: ${REDIS_SENTINEL_MASTER}
+      nodes: ${REDIS_SENTINEL_NODES}
+    lettuce:
+      pool:
+        max-active: 10
+        max-idle: 8
+        min-idle: 1
+        max-wait: 5000
+        time-between-eviction-runs: 1000
+
+requestLogFilter:
+  enabled: true
+responseLogFilter:
+  enabled: true
+gatewayBodyCachingEventConfig:
+  enabled: true
