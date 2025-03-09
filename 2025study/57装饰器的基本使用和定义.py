@@ -3,6 +3,8 @@
 @Time    : 2025/3/6 13:03
 @Content : 装饰器（对应课程在第9节课后段）
 """
+
+
 # 装饰器的定义：在不修改原来函数代码的情况下增加额外的功能，就可以使用装饰器进行完成操作
 # 为需要被装饰的函数添加新的功能或者显示条件以及帮助输出等
 # 核心：在不修改原来函数代码的情况下，给原来的函数添加性能或者限制条件
@@ -18,7 +20,20 @@
 
 
 # 用户进行账号密码的注册，原函数没有进行账号的验证，限制需要额外增加验证账号长度在6-12位字符的验证
+def check_account(need_funk):  # need_funk是接受被装饰函数的引用
+    def inner_check():
+        print("进行内部校验----")
+        print("进行内部校验逻辑2----")
+        need_funk()
+        print("进行内部校验结束----")
 
-def username(usernam):
-    print(f"输入的账号：{usernam}")
+    return inner_check
 
+
+def username():
+    print("输入的账号：123456")
+
+
+username = check_account(username)
+# check执行完成之后，need_funk接受被装饰函数的引用,返回里面函数的引用
+username()
