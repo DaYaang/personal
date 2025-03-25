@@ -1570,7 +1570,17 @@ awp = [
     869
 ]
 
-running(awp)
+# running(xiongdao_list)
+# time.sleep(2)
+# running(lieshazhebishou_list)
+# running(chuangchang_list)
+# running(anyingshuangbi)
+# running(duanjian)
+# running(kuoerka)
+# running(juchi)
+# running(xisheng)
+# running(awp)
+
 
 
 
